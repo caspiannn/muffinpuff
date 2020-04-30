@@ -6,7 +6,7 @@ module.exports = {
 // This is the name of the action displayed in the editor.
 //---------------------------------------------------------------------
 
-name: "Stop Bot",
+name: "Send Message to Console",
 
 //---------------------------------------------------------------------
 // Action Section
@@ -14,7 +14,7 @@ name: "Stop Bot",
 // This is the section the action will fall into.
 //---------------------------------------------------------------------
 
-section: "Bot Client Control",
+section: "Other Stuff",
 
 //---------------------------------------------------------------------
 // Action Subtitle
@@ -23,8 +23,13 @@ section: "Bot Client Control",
 //---------------------------------------------------------------------
 
 subtitle: function(data) {
-	return `Stops bot`;
+	if (data.tosend.length > 0) {
+		return `<font color="${data.color}">${data.tosend}</font>`;
+	} else {
+	return `Please enter a message!`;
+}
 },
+
 
 //---------------------------------------------------------------------
 // DBM Mods Manager Variables (Optional but nice to have!)
@@ -34,26 +39,18 @@ subtitle: function(data) {
 //---------------------------------------------------------------------
 
 // Who made the mod (If not set, defaults to "DBM Mods")
-author: "Lasse",
+author: "Lasse & RigidStudios",
 
 // The version of the mod (Defaults to 1.0.0)
 version: "1.8.2",
 
 // A short description to show on the mod line for this mod (Must be on a single line)
-short_description: "Stops the bot completly",
+short_description: "Sends a message to the console",
 
 // If it depends on any other mods by name, ex: WrexMODS if the mod uses something from WrexMods
 
 
 //---------------------------------------------------------------------
-
-//---------------------------------------------------------------------
-// Action Storage Function
-//
-// Stores the relevant variable info for the editor.
-//---------------------------------------------------------------------
-
-//variableStorage: function(data, varType) {},
 
 //---------------------------------------------------------------------
 // Action Fields
@@ -63,7 +60,7 @@ short_description: "Stops the bot completly",
 // are also the names of the fields stored in the action's JSON data.
 //---------------------------------------------------------------------
 
-fields: [],
+fields: ["tosend","color"],
 
 //---------------------------------------------------------------------
 // Command HTML
@@ -83,13 +80,17 @@ fields: [],
 
 html: function(isEvent, data) {
 	return `
-<div><p><u>Mod Info:</u><br>Created by Lasse!</p></div><br><br>
-<div>
-	<p>
-		<u>Warning:</u><br>
-		This action stops the bot. You cannot restart it with a command!<br>
-		Choose the permissions for this command/event carefully!
-	</p>
+	<div>
+		<p>
+			<u>Mod Info:</u><br>
+			Created by Lasse! (Color Support Added by RigidStudios)
+		</p>
+		Color:<br>
+		<input type="color" id="color" value="#f2f2f2">
+	</div><br>
+<div style="padding-top: 8px;">
+	Message to send:<br>
+	<textarea id="tosend" rows="4" style="width: 99%; font-family: monospace; white-space: nowrap; resize: none;"></textarea>
 </div>`
 },
 
@@ -114,9 +115,20 @@ init: function() {
 //---------------------------------------------------------------------
 
 action: function(cache) {
+	const WrexMODS = this.getWrexMods();                        // WrexMODS Require,
+	WrexMODS.CheckAndInstallNodeModule('chalk');           // To use chalk,
+	const chalk = WrexMODS.require('chalk');               // Because why not.
+
 	const data = cache.actions[cache.index];
-	console.log('Stopped bot!');
-	this.getDBM().Bot.bot.destroy();
+	const send = this.evalMessage(data.tosend, cache);
+		if (send.length > 0) {
+	const color = this.evalMessage(data.color, cache);			// Default to #f2f2f2
+	console.log(chalk.hex(color)(send));										// Logs through Hex code fetched from "color" field.
+	this.callNextAction(cache);
+} else {
+	console.log(chalk.gray(`Please provide something to log: Action #${cache.index + 1}`))
+	this.callNextAction(cache);
+}
 },
 
 //---------------------------------------------------------------------
